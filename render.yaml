@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: admin-workbench
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    # ⚠️ 重要：Render 免费版文件系统是临时的（每天会被清空）
+    # 解决办法：代码里自带 JSON 备份机制，每次写数据都会同步备份到 data/backups/latest-backup.json
+    # 并且 GitHub/GitLab 仓库里如果有这个文件，每次部署也会把最新数据自动恢复回来
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        # 必须固定！否则每次重新部署，所有用户都会掉线
+        value: "admin-workbench-v1-secret-2026-change-me-to-a-long-random-string"
+      - key: DB_PATH
+        # 免费版用项目内路径（虽然每天清，但有 JSON 双保险恢复）
+        # 付费版建议挂持久盘：/var/data/workbench.sqlite
+        value: /opt/render/project/src/data/workbench.sqlite
+    # 健康检查路径
+    healthCheckPath: /
