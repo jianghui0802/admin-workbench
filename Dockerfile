@@ -1,19 +1,22 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Copy dependency files first for caching
-COPY package*.json ./
-RUN npm ci --only=production
+# 安装 sqlite3 编译需要的依赖（只在构建阶段）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy app files
+# 先复制 package 文件，利用缓存
+COPY package*.json ./
+RUN npm install --omit=dev --no-audit --no-fund || npm install --no-audit --no-fund
+
+# 复制代码
 COPY . .
 
-# Ensure data directory exists
+# 确保数据目录存在
 RUN mkdir -p /app/data
 
-# Expose port
 EXPOSE 8080
 
-# Start
 CMD ["node", "server.js"]
